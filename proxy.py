@@ -4,28 +4,35 @@ import re
 import BaseHTTPServer
 import hashlib
 import requests
+import getpass
+from bs4 import BeautifulSoup
 import werkzeug
 
 
-BASE_DOMAIN = 'https://thesite.com'
+BASE_DOMAIN = 'https://www.thesite.com'
 PROXY_DOMAIN = 'http://localhost:8000'
-CACHE = True
+CACHE = False
 session = requests.Session()
 session.cookies = requests.cookies.cookielib.LWPCookieJar('cookies.txt')
 if not os.path.exists('cookies.txt'):
     session.cookies.save()
 session.cookies.load()
 
+COPY_HEADERS = [
+    "vary",
+    "content-type",
+]
 
 def transform_resp(data):
-    data = re.sub(r'(https?:\\/\\/[0-9a-z-.]+\.[a-z]{2,3})', r'http:\\/\\/localhost:8000/__dom/\1', data)
+    data = data.replace(BASE_DOMAIN, '')
+    data = data.replace(BASE_DOMAIN.replace('/', '\\/'), '')
+    data = re.sub(r'(https?:\\/\\/[0-9a-z-.]+\.[a-z]{2,3})', r'http://localhost:8000/__dom/\1', data)
     data = re.sub(r'(https?://[0-9a-z-.]+\.[a-z]{2,3})', r'http://localhost:8000/__dom/\1', data)
     return data
 
-
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def _do_GET(self):
-        domain = re.findall(r'__dom/(https?://[0-9a-z-.]+\.[a-z]{2,3})', self.path)
+        domain = re.findall(r'^/__dom/(https?://[0-9a-z-.]+\.[a-z]{2,3})', self.path)
         if domain:
             domain = domain[0]
             path = self.path[7:]
@@ -41,12 +48,18 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
         else:
             r = session.get("{}".format(path))
+
             data = transform_resp(r.content)
             with open(hashfile, 'w') as f:
                 f.write(data)
             self.send_response(r.status_code)
 
-        self.end_headers()
+            for k, v in r.headers.items():
+                if k.lower() in COPY_HEADERS:
+                    self.send_header(k, v)
+
+            self.end_headers()
+
         self.wfile.writelines(data)
 
     def do_GET(self):
