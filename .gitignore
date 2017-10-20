@@ -1,0 +1,8 @@
+cache/*
+header_cache/*
+cookies.txt
+debug.log
+.env/*
+
+!cache/.keep
+!header_cache/.keep

@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import werkzeug
 
 
-BASE_DOMAIN = 'https://www.thesite.com'
+BASE_DOMAIN = 'https://our.kacasey.sb.facebook.com'
 PROXY_DOMAIN = 'http://localhost:8000'
 CACHE = False
 session = requests.Session()
@@ -41,11 +41,19 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             path = '{}{}'.format(BASE_DOMAIN, self.path)
 
         hashfile = os.path.join('cache', hashlib.sha1(path).hexdigest() + '.cache')
-
-        if CACHE and os.path.exists(hashfile):
+        hashfile_header = os.path.join('header_cache', hashlib.sha1(path).hexdigest() + '.cache')
+        HEADER_KEY_VALUE_SEPARATOR = '::::::'
+        if CACHE and os.path.exists(hashfile) and os.path.exists(hashfile_header):
             with open(hashfile) as f:
                 data = f.read()
             self.send_response(200)
+            with open(hashfile_header) as f:
+                lines = f.readlines()
+                for line in lines:
+                    line = line.strip()
+                    k, v = line.split(HEADER_KEY_VALUE_SEPARATOR)
+                    self.send_header(k, v)
+            self.end_headers()
         else:
             r = session.get("{}".format(path))
 
@@ -54,9 +62,11 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
                 f.write(data)
             self.send_response(r.status_code)
 
-            for k, v in r.headers.items():
-                if k.lower() in COPY_HEADERS:
-                    self.send_header(k, v)
+            with open(hashfile_header, 'w') as f:
+                for k, v in r.headers.items():
+                    if k.lower() in COPY_HEADERS:
+                        f.write(k + HEADER_KEY_VALUE_SEPARATOR + v + '\n')
+                        self.send_header(k, v)
 
             self.end_headers()
 
