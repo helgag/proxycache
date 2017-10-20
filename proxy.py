@@ -55,6 +55,8 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
                     self.send_header(k, v)
             self.end_headers()
         else:
+            if CACHE:
+                import pdb; pdb.set_trace()
             r = session.get("{}".format(path))
 
             data = transform_resp(r.content)
@@ -94,11 +96,30 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         field_data = self.rfile.read(length)
         fields = werkzeug.url_decode(field_data)
 
-        r = session.post("{}".format(path), data=dict(**fields))
+        CRITICAL_KEYS = ['q']
+        TROLL = ''
+        for crit in CRITICAL_KEYS:
+            if crit in field_data:
+                TROLL += field_data[crit]
 
-        data = transform_resp(r.content)
+        hashfile = os.path.join('post_cache', hashlib.sha1(path + TROLL).hexdigest() + '.cache')
 
-        self.send_response(r.status_code)
+        if CACHE and os.path.exists(hashfile):
+            with open(hashfile) as f:
+                data = f.read()
+            self.send_response(200)
+        else:
+            if CACHE:
+                import pdb; pdb.set_trace()
+
+            r = session.post("{}".format(path), data=dict(**fields))
+
+            data = transform_resp(r.content)
+
+            with open(hashfile, 'w') as f:
+                f.write(data)
+
+            self.send_response(r.status_code)
         self.end_headers()
         self.wfile.writelines(data)
 

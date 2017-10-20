@@ -1,8 +1,10 @@
 cache/*
 header_cache/*
+post_cache/*
 cookies.txt
 debug.log
 .env/*
 
 !cache/.keep
 !header_cache/.keep
+!post_cache/.keep
