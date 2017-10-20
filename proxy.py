@@ -11,7 +11,7 @@ import werkzeug
 
 BASE_DOMAIN = 'https://our.kacasey.sb.facebook.com'
 PROXY_DOMAIN = 'http://localhost:8000'
-CACHE = True
+CACHE = False
 session = requests.Session()
 session.cookies = requests.cookies.cookielib.LWPCookieJar('cookies.txt')
 if not os.path.exists('cookies.txt'):

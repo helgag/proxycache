@@ -4,6 +4,7 @@ post_cache/*
 cookies.txt
 debug.log
 .env/*
+great_url.txt
 
 !cache/.keep
 !header_cache/.keep
