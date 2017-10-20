@@ -11,7 +11,7 @@ import werkzeug
 
 BASE_DOMAIN = 'https://our.kacasey.sb.facebook.com'
 PROXY_DOMAIN = 'http://localhost:8000'
-CACHE = False
+CACHE = True
 session = requests.Session()
 session.cookies = requests.cookies.cookielib.LWPCookieJar('cookies.txt')
 if not os.path.exists('cookies.txt'):
@@ -54,6 +54,8 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
                     k, v = line.split(HEADER_KEY_VALUE_SEPARATOR)
                     self.send_header(k, v)
             self.end_headers()
+        elif CACHE:
+            return
         else:
             if CACHE:
                 import pdb; pdb.set_trace()
@@ -97,21 +99,21 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         fields = werkzeug.url_decode(field_data)
 
         CRITICAL_KEYS = ['q']
-        TROLL = ''
+        data_for_path = ''
         for crit in CRITICAL_KEYS:
-            if crit in field_data:
-                TROLL += field_data[crit]
+            if crit in fields:
+                data_for_path += fields[crit]
 
-        hashfile = os.path.join('post_cache', hashlib.sha1(path + TROLL).hexdigest() + '.cache')
+        path_with_data = path + data_for_path
+        hashfile = os.path.join('post_cache', hashlib.sha1(path_with_data).hexdigest() + '.cache')
 
         if CACHE and os.path.exists(hashfile):
             with open(hashfile) as f:
                 data = f.read()
             self.send_response(200)
+        elif CACHE:
+            return
         else:
-            if CACHE:
-                import pdb; pdb.set_trace()
-
             r = session.post("{}".format(path), data=dict(**fields))
 
             data = transform_resp(r.content)
