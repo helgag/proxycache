@@ -28,6 +28,7 @@ def transform_resp(data):
     data = data.replace(BASE_DOMAIN.replace('/', '\\/'), '')
     data = re.sub(r'(https?:\\/\\/[0-9a-z-.]+\.[a-z]{2,3})', r'http://localhost:8000/__dom/\1', data)
     data = re.sub(r'(https?://[0-9a-z-.]+\.[a-z]{2,3})', r'http://localhost:8000/__dom/\1', data)
+
     return data
 
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -42,7 +43,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         hashfile = os.path.join('cache', hashlib.sha1(path).hexdigest() + '.cache')
         hashfile_header = os.path.join('header_cache', hashlib.sha1(path).hexdigest() + '.cache')
-        HEADER_KEY_VALUE_SEPARATOR = '::::::'
+        HEADER_KEY_VALUE_SEPARATOR = ':'
         if CACHE and os.path.exists(hashfile) and os.path.exists(hashfile_header):
             with open(hashfile) as f:
                 data = f.read()
@@ -85,7 +86,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             logging.debug("GET failed: %s\n%s" % (self.path, e))
 
     def _do_POST(self):
-        # TODO: cache this at all?
         domain = re.findall(r'__dom/(https?://[0-9a-z-.]+\.[a-z]{2,3})', self.path)
         if domain:
             domain = domain[0]
