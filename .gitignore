@@ -5,6 +5,7 @@ cookies.txt
 debug.log
 .env/*
 great_url.txt
+notes.txt
 
 !cache/.keep
 !header_cache/.keep
